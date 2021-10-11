@@ -8,7 +8,7 @@ This version can handle digital data (stored in the ch1 analog data). Also getti
 this code a bit neater, and getting rid of anything having to do with the second digital data channel (used for
 the trigger on the Picoscope).
 
-Updated: Jul 14, 2021 (v4)
+Updated: Oct, 2021 (v7)
 By: Daniela
 
 Description: What Kyle said. Now we are going to clean up the code. We want to use more points for signal pulses by getting rid of the EIT scan (3000 more). 
@@ -18,8 +18,9 @@ I got rid of the part HISTOGRAM OF PHASE SHIFT IN A SHOT GIVEN A CLICK and phase
 The variable std_dir_test[k]=phase_std2 is taking the standard deviation of 100 phase points. This was created to study the phase noise when varying the power. I'll comment it for now.
 I'm going to change the way we calculate the means by just doing big sums and keeping track of how many shots total.
 The spectrum feature really slows down the code and we need it. Let's fix it by putting the conditional outside the for loop. 
-#v6 Let's add the shots from the EIT window. 6000 points or how ever many can complete shots of 36. 
-#v7 I added a way to see the XPS over an atom cycle after averaging all the atom cycles. Line 323 saving amplitudes to find the OD during the pulsing time. 
+v6 Let's add the shots from the EIT window. 6000 points or how ever many can complete shots of 36. 
+v7 I added a way to see the XPS over an atom cycle after averaging all the atom cycles. Line 323 saving amplitudes to find the OD during the pulsing time.
+These recent versions have been about analyzing different quantities over an atom cycle. Averaging all the atom cycles first and then breaking it in chunks. See last 20 lines. 
 ----------------------------------------------------------------
 """
 
@@ -47,7 +48,8 @@ mpl.rcParams.update({'font.size': 10, 'font.weight': 'bold','font.family': 'STIX
 
 
 # dir_main = 'F:/Data/20210726/XPS_res_OD/10_0p25'
-dir_main = 'D:/Data/20211008/XPS_pdet/mp15_clicks'
+#dir_main = 'D:/Data/20211008/XPS_pdet/mp15_clicks'
+dir_main = 'sample_data_clicks'
 #dir_main = 'F:/Data/20210723/XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p15V'
 #dir_main = 'XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p01V'
 
@@ -275,6 +277,7 @@ numAtomCycles = 0
 amplitudeAVG=0
 phaseAVG = 0
 phase_in_a_cycle=0
+DigitalData1_cycles=0
 print("Analyzing data in directory: " + dir_main)
 for root, dirs,files in os.walk(dir_main):
 	numFiles=len(files)/2.
@@ -330,9 +333,10 @@ for root, dirs,files in os.walk(dir_main):
 				averaged_phase_in_a_shot_CLICK_for_dir+=np.mean(Phase_in_a_shot_CLICKProbe1,0)
 				averaged_phase_in_a_shot_NOCLICK_for_dir+=np.mean(Phase_in_a_shot_NOCLICKProbe1,0)
 				DigitalChannel1Counter_dir += digitalChannel1CounterProbe1
+				DigitalData1_cycles+=DigitalData1_in_a_shotProbe1
 				amp_dir_test[k]=amplitudePulsingProbe1
 				numAtomCycles += 1
-				
+
 				phase_shiftProbe1_1+=np.sum(phase_shiftProbe1)/numShots
 				square_phase_shift+=np.sum(phase_shiftProbe1**2)/numShots
 				phase_shiftProbe1_File+=np.mean(phase_shiftProbe1)/SegmentsPerFile
@@ -676,7 +680,7 @@ background_f_phase = np.mean(Phase_in_a_shot[:,start3:stop3],1)
 background_phase =  (background_i_phase+background_f_phase)/2
 signal_phase = np.mean(Phase_in_a_shot[:,start2:stop2],1) #getting peak value
 phase_shift = 1000*(signal_phase - background_phase)
-average_shots=75
+average_shots=165
 phase_shift_shots=np.mean(np.reshape(phase_shift,(int(numShots/average_shots),average_shots)),1)
 shots_std=np.std(np.reshape(phase_shift,(int(numShots/average_shots),average_shots)),1)
 stringnamepng = dir_main+"XPS_array.csv"
@@ -699,12 +703,23 @@ stoptime = time.time()
 print("Program took %1.2f seconds" %(stoptime-starttime))
 
 plt.figure(figsize=(7.2,5))
-plt.errorbar(np.arange(numShots/average_shots),phase_shift_shots,yerr=shots_std/np.sqrt(average_shots),fmt='ro')
-plt.axhline(y=phase_shift.mean(), color='b', linestyle='-')
+plt.axhline(y=0, color='b', linestyle='-')
 plt.xlabel(r"shot", fontsize = 18)
 plt.ylabel(r'XPS', fontsize = 18)
-plt.text(700,phase_shift.max(),r"new mean is %1.2f" %(np.mean(phase_shift[0:800])))
+#plt.text(700,phase_shift.max(),r"new mean is %1.2f" %(np.mean(phase_shift[0:800])))
+plt.errorbar(np.arange(numShots/average_shots),phase_shift_shots,yerr=shots_std/np.sqrt(average_shots),fmt='ro')
 #plt.legend((r'Signal off',r'Signal on'))
 stringnamepng = dir_main+"XPS_cycle.png"
 plt.savefig(stringnamepng,format='png', dpi=400)
 #plt.show()
+
+#this is temporary code to find the click rates or OD for each shot as a function of time (signal info)
+
+clicks_pershot=np.sum(DigitalData1_cycles,1)
+clicks_grouped=np.mean(np.reshape(clicks_pershot,(int(numShots/average_shots),average_shots)),1)
+clicks_grouped_std=np.std(np.reshape(clicks_pershot,(int(numShots/average_shots),average_shots)),1)
+plt.figure(figsize=(7.2,5))
+plt.errorbar(np.arange(numShots/average_shots),clicks_grouped,yerr=clicks_grouped_std/np.sqrt(average_shots),fmt='ro')
+stringnamepng = dir_main+"clicks_cycle.png"
+plt.savefig(stringnamepng,format='png', dpi=400)
+plt.show()
