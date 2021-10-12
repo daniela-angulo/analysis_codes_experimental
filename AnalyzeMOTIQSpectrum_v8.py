@@ -48,8 +48,8 @@ mpl.rcParams.update({'font.size': 10, 'font.weight': 'bold','font.family': 'STIX
 
 
 # dir_main = 'F:/Data/20210726/XPS_res_OD/10_0p25'
-#dir_main = 'D:/Data/20211008/XPS_pdet/mp15_clicks'
-dir_main = 'sample_data_clicks'
+dir_main = 'D:/Data/20211012/XPS_pdet/p1_clicks'
+#dir_main = 'sample_data_clicks'
 #dir_main = 'F:/Data/20210723/XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p15V'
 #dir_main = 'XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p01V'
 
@@ -680,7 +680,7 @@ background_f_phase = np.mean(Phase_in_a_shot[:,start3:stop3],1)
 background_phase =  (background_i_phase+background_f_phase)/2
 signal_phase = np.mean(Phase_in_a_shot[:,start2:stop2],1) #getting peak value
 phase_shift = 1000*(signal_phase - background_phase)
-average_shots=103
+average_shots=16
 phase_shift_shots=np.mean(np.reshape(phase_shift,(int(numShots/average_shots),average_shots)),1)
 shots_std=np.std(np.reshape(phase_shift,(int(numShots/average_shots),average_shots)),1)
 stringnamepng = dir_main+"XPS_array.csv"
@@ -714,12 +714,14 @@ plt.savefig(stringnamepng,format='png', dpi=400)
 #plt.show()
 
 #this is temporary code to find the click rates or OD for each shot as a function of time (signal info)
-
+stringnamepng = dir_main+"clicks_cycle.csv"
 clicks_pershot=np.sum(DigitalData1_cycles,1)/numAtomCycles
-clicks_grouped=np.mean(np.reshape(clicks_pershot,(int(numShots/average_shots),average_shots)),1)
-clicks_grouped_std=np.std(np.reshape(clicks_pershot,(int(numShots/average_shots),average_shots)),1)
-plt.figure(figsize=(7.2,5))
-plt.errorbar(np.arange(numShots/average_shots),clicks_grouped,yerr=clicks_grouped_std/np.sqrt(average_shots),fmt='ro')
-stringnamepng = dir_main+"clicks_cycle.png"
-plt.savefig(stringnamepng,format='png', dpi=400)
+log_clicks_pershot=-np.log(clicks_pershot)
+log_grouped=np.mean(np.reshape(log_clicks_pershot,(int(numShots/average_shots),average_shots)),1)
+clicks_grouped_std=np.std(np.reshape(log_clicks_pershot,(int(numShots/average_shots),average_shots)),1)
+np.savetxt(stringnamepng,(clicks_pershot),delimiter = ',')
+# plt.figure(figsize=(7.2,5))
+# plt.errorbar(np.arange(numShots/average_shots),log_grouped,yerr=clicks_grouped_std/np.sqrt(average_shots),fmt='ro')
+# stringnamepng = dir_main+"clicks_cycle.png"
+# plt.savefig(stringnamepng,format='png', dpi=400)
 # plt.show()
