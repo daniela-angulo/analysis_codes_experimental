@@ -48,8 +48,8 @@ mpl.rcParams.update({'font.size': 10, 'font.weight': 'bold','font.family': 'STIX
 
 
 # dir_main = 'F:/Data/20210726/XPS_res_OD/10_0p25'
-#dir_main = 'D:/Data/20211008/XPS_pdet/mp15_clicks'
-dir_main = 'sample_data_clicks'
+dir_main = 'D:/Data/20211008/XPS_pdet/p1_clicks'
+#dir_main = 'sample_data_clicks'
 #dir_main = 'F:/Data/20210723/XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p15V'
 #dir_main = 'XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p01V'
 
@@ -688,13 +688,13 @@ np.savetxt(stringnamepng,(phase_shift_shots,shots_std),delimiter = ',')
 
 phase_in_shot_over_time=Phase_in_a_shot.reshape(-1,average_shots,numMeasurementsPerShot).mean(axis=1)
 
-# for i in range(int(numShots/average_shots)):
-# 	plt.figure()
-# 	plt.grid()
-# 	plt.ylim(-8,8)
-# 	plt.plot(np.arange(numMeasurementsPerShot),1000*(phase_in_shot_over_time[i]-phase_in_shot_over_time[i].mean()))
-# 	stringnamepng = dir_main+"XPS_cycle"+str(i)+".png"
-# 	plt.savefig(stringnamepng,format='png', dpi=400)
+for i in range(int(numShots/average_shots)):
+	plt.figure()
+	plt.grid()
+	plt.ylim(-8,8)
+	plt.plot(np.arange(numMeasurementsPerShot),1000*(phase_in_shot_over_time[i]-phase_in_shot_over_time[i].mean()))
+	stringnamepng = dir_main+"XPS_cycle"+str(i)+".png"
+	plt.savefig(stringnamepng,format='png', dpi=400)
 
 #-phase_in_shot_over_time[i].mean()
 
