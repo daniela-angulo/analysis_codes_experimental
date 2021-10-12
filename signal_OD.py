@@ -20,14 +20,14 @@ def inverse(x,m,b):
 def exponential(x,m,a,b):
 	return np.exp(-m*(x-a))+b
 
-stringname="D:/Data/20211012/XPS_pdet/p1_clicksclicks_cycle"
+stringname="D:/Data/20211012/XPS_pdet/p1_CWsignalclicks_cycle"
 final_amp=np.genfromtxt(stringname+".csv",delimiter = ',')
 x_arr=np.arange(len(final_amp))
 
-stringname="D:/Data/20211012/XPS_pdet/p1_clicks_refclicks_cycle"
+stringname="D:/Data/20211012/XPS_pdet/p1_CWsignal_refclicks_cycle"
 reference=np.genfromtxt(stringname+".csv",delimiter = ',')
 
-signalPulsing_OD=-np.log(final_amp/reference[1600])
+signalPulsing_OD=-np.log(final_amp/np.mean(reference))
 #popt1,pcov1= curve_fit(exponential,x_arr,y)
 #bounds=([-2.e-2,62800,-7], [2.e-2,62850,7])
 

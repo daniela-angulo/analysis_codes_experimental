@@ -48,7 +48,7 @@ mpl.rcParams.update({'font.size': 10, 'font.weight': 'bold','font.family': 'STIX
 
 
 # dir_main = 'F:/Data/20210726/XPS_res_OD/10_0p25'
-dir_main = 'D:/Data/20211012/XPS_pdet/p1_clicks'
+dir_main = 'D:/Data/20211012/XPS_pdet/p1_CWsignal_ref'
 #dir_main = 'sample_data_clicks'
 #dir_main = 'F:/Data/20210723/XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p15V'
 #dir_main = 'XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p01V'
@@ -680,7 +680,7 @@ background_f_phase = np.mean(Phase_in_a_shot[:,start3:stop3],1)
 background_phase =  (background_i_phase+background_f_phase)/2
 signal_phase = np.mean(Phase_in_a_shot[:,start2:stop2],1) #getting peak value
 phase_shift = 1000*(signal_phase - background_phase)
-average_shots=16
+average_shots=103
 phase_shift_shots=np.mean(np.reshape(phase_shift,(int(numShots/average_shots),average_shots)),1)
 shots_std=np.std(np.reshape(phase_shift,(int(numShots/average_shots),average_shots)),1)
 stringnamepng = dir_main+"XPS_array.csv"
