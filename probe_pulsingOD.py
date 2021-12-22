@@ -19,12 +19,13 @@ def inverse(x,m,b):
 
 def exponential(x,m,a,b):
 	return np.exp(-m*(x-a))+b
+main_dir="D:/Data/20211025/XPS_pdet/mp15"
 
-stringname="D:/Data/20211012/XPS_pdet/p1_clicksamp_pulsing"
-final_amp=np.genfromtxt(stringname+".csv",delimiter = ',')
+stringname1=main_dir+"amp_pulsing"
+final_amp=np.genfromtxt(stringname1+".csv",delimiter = ',')
 x_arr=np.arange(len(final_amp))
 
-stringname="D:/Data/20211012/XPS_pdet/p1_clicks_refamp_pulsing"
+stringname=main_dir+"_refamp_pulsing"
 reference=np.genfromtxt(stringname+".csv",delimiter = ',')
 
 probePulsing_OD=-2*np.log(final_amp/reference)
@@ -32,7 +33,7 @@ probePulsing_OD=-2*np.log(final_amp/reference)
 #bounds=([-2.e-2,62800,-7], [2.e-2,62850,7])
 
 print(np.mean(probePulsing_OD[200:3000]))
-
+plt.figure()
 plt.plot(x_arr,probePulsing_OD,'ro')
 #plt.plot(x_arr,y,'ro',x_arr,exponential(x_arr,*popt1),'-')
 #plt.plot(x,1000*inverse(np.sqrt(photon_number),0.5,0),'go')
@@ -43,5 +44,21 @@ plt.ylim(bottom=0)
 plt.xlim(left=0)
 #plt.legend((r'Data',r'exp(-%.2e(x-%.2e))+%5.2f'%tuple(popt1)))
 plt.grid()
-plt.savefig(stringname+'OD.png',dpi=400)
+plt.savefig(stringname1+'OD.png',dpi=400)
+
+np.savetxt(stringname1+'OD.csv',probePulsing_OD,delimiter = ',')
+
+#plot ratio of XPS to OD
+stringname1=main_dir+"XPS_shots_average"
+XPS=np.genfromtxt(stringname1+".csv",delimiter = ',')
+average_OD=np.mean(np.reshape(probePulsing_OD,(int(len(XPS[0])),int(len(probePulsing_OD)/len(XPS[0])))),1)
+ratio=(XPS[0]/average_OD)
+plt.figure()
+plt.plot(np.arange(len(average_OD)),ratio,'ro')
+plt.title(r'ratio XPS to OD'+stringname1)
+plt.xlabel(r'measurement')
+plt.ylabel(r'ratio XPS/OD')
+plt.xlim(left=0)
+plt.grid()
+plt.savefig(stringname1+'ratio.png',dpi=400)
 plt.show()

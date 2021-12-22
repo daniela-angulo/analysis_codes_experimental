@@ -20,11 +20,11 @@ def inverse(x,m,b):
 def exponential(x,m,a,b):
 	return np.exp(-m*(x-a))+b
 
-stringname="D:/Data/20211012/XPS_pdet/p1_CWsignalclicks_cycle"
+stringname="D:/Data/20211021/signal_OD/noprobeCWclicks_cycle"
 final_amp=np.genfromtxt(stringname+".csv",delimiter = ',')
 x_arr=np.arange(len(final_amp))
 
-stringname="D:/Data/20211012/XPS_pdet/p1_CWsignal_refclicks_cycle"
+stringname="D:/Data/20211021/signal_OD/noprobeCW_refclicks_cycle"
 reference=np.genfromtxt(stringname+".csv",delimiter = ',')
 
 signalPulsing_OD=-np.log(final_amp/np.mean(reference))

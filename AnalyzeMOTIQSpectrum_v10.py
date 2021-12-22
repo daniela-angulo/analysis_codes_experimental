@@ -21,6 +21,7 @@ The spectrum feature really slows down the code and we need it. Let's fix it by 
 v6 Let's add the shots from the EIT window. 6000 points or how ever many can complete shots of 36. 
 v7 I added a way to see the XPS over an atom cycle after averaging all the atom cycles. Line 323 saving amplitudes to find the OD during the pulsing time.
 These recent versions have been about analyzing different quantities over an atom cycle. Averaging all the atom cycles first and then breaking it in chunks. See last 20 lines. 
+v10 to only look at the second half of the cycle or just divide it into two 
 ----------------------------------------------------------------
 """
 
@@ -48,22 +49,24 @@ mpl.rcParams.update({'font.size': 10, 'font.weight': 'bold','font.family': 'STIX
 
 
 # dir_main = 'F:/Data/20210726/XPS_res_OD/10_0p25'
-dir_main = 'D:/Data/20211028/linear_phase/take2/mp15'
-#dir_main = 'D:/Data/20211119/OD_test/res'
+# dir_main = 'D:/Data/20211028/linear_phase/take2/mp15'
+# dir_main = 'D:/Data/20211129/CvNC_vs_noise/211photons_600mV_rms_noise'
+dir_main = 'D:/Data/20211220/test_data/60files'
+# dir_main = 'D:/Data/20211129/phi_0_633'
 # dir_main = 'D:/Data/20211104/XPS_vs_probe_power/test'
 #dir_main = 'sample_data_clicks'
 #dir_main = 'F:/Data/20210723/XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p15V'
 #dir_main = 'XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p01V'
 
 fileendstring = '_0.tdms'
-AnalyzeDigitalDataBool = False
+AnalyzeDigitalDataBool = True
 TemporalFilteringBool = False
 ReplaceBool = False
 Spectrum = True
 correction_factor = 6.605 #see evernote from Mar 1, 2021 for calibration
 #numShotsToCorrelate = 50
 numsigma = 1
-delayshift = -1#delay the SPCM's by some # of shots to compensate for a 1us delay with BNCs
+delayshift = 0#delay the SPCM's by some # of shots to compensate for a 1us delay with BNCs
 factor=1 #1.70*.94, this has to be checked every day (don't know)
 zerovalue = 7 #this has to be checked every day (don't know)
 BackgroundPhase=0 #np.genfromtxt('backgroundphaseATOMS20190823.txt', delimiter=',')
@@ -94,23 +97,23 @@ phase_slope=-0.000321146 #found in calibration for 10KHz LO detuning
 # start3 = 17+shift #17
 # stop3 = 21+shift #21
 
-# # for 50ns Gaussian pulses
-# shift = 0 #2
-# start1 = 4+shift
-# stop1 = 8+shift
-# start2 = 17+shift #9
-# stop2 = 18+shift #10
-# start3 = 27+shift #17
-# stop3 = 31+shift #21
-
-# for 10ns Gaussian pulses
-shift = -1 #2
-start1 = 6+shift
-stop1 = 10+shift
+# for 50ns Gaussian pulses
+shift = 1 #2
+start1 = 4+shift
+stop1 = 8+shift
 start2 = 17+shift #9
 stop2 = 18+shift #10
-start3 = 25+shift #17
-stop3 = 29+shift #21
+start3 = 27+shift #17
+stop3 = 31+shift #21
+
+# # for 10ns Gaussian pulses
+# shift = -4 #2
+# start1 = 6+shift
+# stop1 = 10+shift
+# start2 = 17+shift #9
+# stop2 = 18+shift #10
+# start3 = 25+shift #17
+# stop3 = 29+shift #21
 
 
 def sixteenBitIntegerTomV(Array,VoltageRange):
@@ -241,10 +244,15 @@ def Analyze(amplitude, phase, digitaldata1, numShots, numMeasurements, numMeasur
 			amplitude_shift_CLICK=amplitude_shift
 			phase_shift_NOCLICK=phase_shift
 			amplitude_shift_NOCLICK=amplitude_shift
-			Phase_in_a_shot_CLICK=np.zeros((900,18))
-			Phase_in_a_shot_NOCLICK=np.zeros((900,18))
-			Amplitude_in_a_shot_CLICK=np.zeros((900,18))
-			Amplitude_in_a_shot_NOCLICK=np.zeros((900,18))
+			# Phase_in_a_shot_CLICK=np.zeros((900,18))
+			# Phase_in_a_shot_NOCLICK=np.zeros((900,18))
+			# Amplitude_in_a_shot_CLICK=np.zeros((900,18))
+			# Amplitude_in_a_shot_NOCLICK=np.zeros((900,18))
+			Phase_in_a_shot_CLICK=np.zeros((numShots,numMeasurementsPerShot))
+			Phase_in_a_shot_NOCLICK=np.zeros((numShots,numMeasurementsPerShot))
+			Amplitude_in_a_shot_CLICK=np.zeros((numShots,numMeasurementsPerShot))
+			Amplitude_in_a_shot_NOCLICK=np.zeros((numShots,numMeasurementsPerShot))
+
 	else:
 		DigitalData1=np.zeros(numShots)
 		DigitalData1_in_a_shot=np.zeros((numShots,numMeasurementsPerShot))
@@ -298,6 +306,7 @@ amplitudeAVG=0
 phaseAVG = 0
 phase_in_a_cycle=0
 DigitalData1_cycles=0
+
 print("Analyzing data in directory: " + dir_main)
 for root, dirs,files in os.walk(dir_main):
 	numFiles=len(files)/2.
@@ -494,7 +503,7 @@ if Spectrum == True:
 	def func_lorentzian(x,a,b,center):
 		return a/((b/2)**2 + (x-center)**2)
 	def dispersive_lorentzian(x,a,b,center):
-		return -a*(x-center)/((b/2)**2 + (x-center)**2)/8.
+		return -a*(x-center)/((b/2)**2 + (x-center)**2)/4.
 
 	center_lower =40
 	center_upper = 70
@@ -659,11 +668,11 @@ stringname24 = dir_main+"SPCM.csv"
 stringname25 = dir_main+"Cphase.csv"
 stringname26 = dir_main+"NCphase.csv"
 
-#np.savetxt(stringname23,(CvNC_difference),delimiter = ',')
-#np.savetxt(stringname22,(averaged_phase_in_a_shot_for_dir_final_zeromean_noslope),delimiter=',')
-#np.savetxt(stringname24,(avg_digital_data),delimiter=',')
-#np.savetxt(stringname25,(averaged_phase_in_a_shot_CLICK_for_dir_final_zeromean_noslope),delimiter=',')
-#np.savetxt(stringname26,(averaged_phase_in_a_shot_NOCLICK_for_dir_final_zeromean_noslope),delimiter=',')
+np.savetxt(stringname23,(CvNC_difference),delimiter = ',')
+np.savetxt(stringname22,(averaged_phase_in_a_shot_for_dir_final_zeromean_noslope),delimiter=',')
+np.savetxt(stringname24,(avg_digital_data),delimiter=',')
+np.savetxt(stringname25,(averaged_phase_in_a_shot_CLICK_for_dir_final_zeromean_noslope),delimiter=',')
+np.savetxt(stringname26,(averaged_phase_in_a_shot_NOCLICK_for_dir_final_zeromean_noslope),delimiter=',')
 
 
 ####################################PLOT OF AVG OD FOR EACH ATOM CYCLE###############		
@@ -750,12 +759,14 @@ print("Program took %1.2f seconds" %(stoptime-starttime))
 #plt.show()
 
 #this is temporary code to find the click rates or OD for each shot as a function of time (signal info)
-# stringnamepng = dir_main+"clicks_cycle.csv"
-# clicks_pershot=np.sum(DigitalData1_cycles,1)/numAtomCycles
-# log_clicks_pershot=-np.log(clicks_pershot)
-# log_grouped=np.mean(np.reshape(log_clicks_pershot,(int(numShots/average_shots),average_shots)),1)
-# clicks_grouped_std=np.std(np.reshape(log_clicks_pershot,(int(numShots/average_shots),average_shots)),1)
-# np.savetxt(stringnamepng,(clicks_pershot),delimiter = ',')
+#average clicks in a cycle
+
+stringnamepng = dir_main+"clicks_cycle.csv"
+clicks_pershot=np.sum(DigitalData1_cycles,1)/numAtomCycles
+log_clicks_pershot=-np.log(clicks_pershot)
+log_grouped=np.mean(np.reshape(log_clicks_pershot,(int(numShots/average_shots),average_shots)),1)
+clicks_grouped_std=np.std(np.reshape(log_clicks_pershot,(int(numShots/average_shots),average_shots)),1)
+np.savetxt(stringnamepng,(clicks_pershot),delimiter = ',')
 # plt.figure(figsize=(7.2,5))
 # plt.errorbar(np.arange(numShots/average_shots),log_grouped,yerr=clicks_grouped_std/np.sqrt(average_shots),fmt='ro')
 # stringnamepng = dir_main+"clicks_cycle.png"
