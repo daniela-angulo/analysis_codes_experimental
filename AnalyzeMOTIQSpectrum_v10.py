@@ -68,8 +68,8 @@ correction_factor = 6.605 #see evernote from Mar 1, 2021 for calibration
 numsigma = 1
 delayshift = 0#delay the SPCM's by some # of shots to compensate for a 1us delay with BNCs
 factor=1 #1.70*.94, this has to be checked every day (don't know)
-zerovalue = 7 #this has to be checked every day (don't know)
-BackgroundPhase=0 #np.genfromtxt('backgroundphaseATOMS20190823.txt', delimiter=',')
+zerovalue = 7 #this has to be checked every day for the amplitude in mV (don't know)
+BackgroundPhase=0 #np.genfromtxt('backgroundphaseATOMS20190823.txt', delimiter=',') (don't know)
 numShots = 1648#2*2*375
 offsetOD = 0 #(don't know)
 numMeasurementsProbe1 = int(59328)
@@ -77,8 +77,6 @@ numMeasurementsTotal =  int(72000)
 numMeasurementsPerShot = int(144/4) #thats 2382.25ns
 scansize = int(6300)
 phase_slope=-0.000321146 #found in calibration for 10KHz LO detuning
-#phase_slope=-0.0294728 #found in calibration for 300KHz LO detuning
-#phase_slope=-0.000344*10*3 #found in calibration for 10KHz LO detuning
 #these have to be equidistant etc otherwise the fit approach won't match the subtraction approach
 #for 200ns pulses
 # shift = 1#2
@@ -121,13 +119,13 @@ def sixteenBitIntegerTomV(Array,VoltageRange):
 	Array_involts = Multiplier*Array
 	return(Array_involts)
 
-def dec_to_bin(x):
-	m=8
-	#binary_matrix=(((x[:,None].astype(int) & (1 << np.arange(m)))) > 0).astype(int)
-	binary_matrix=(((x[:,None] & (1 << np.arange(m)))) > 0).astype(int)
-	y1 = binary_matrix[:,1]
-	y5 = binary_matrix[:,5]
-	return(y1,y5)
+# def dec_to_bin(x):
+# 	m=8
+# 	#binary_matrix=(((x[:,None].astype(int) & (1 << np.arange(m)))) > 0).astype(int)
+# 	binary_matrix=(((x[:,None] & (1 << np.arange(m)))) > 0).astype(int)
+# 	y1 = binary_matrix[:,1]
+# 	y5 = binary_matrix[:,5]
+# 	return(y1,y5)
 
 def separate_analog_and_digital(combined_data):
 	#splits data from ch1 into the analog value and the digital part
@@ -244,10 +242,6 @@ def Analyze(amplitude, phase, digitaldata1, numShots, numMeasurements, numMeasur
 			amplitude_shift_CLICK=amplitude_shift
 			phase_shift_NOCLICK=phase_shift
 			amplitude_shift_NOCLICK=amplitude_shift
-			# Phase_in_a_shot_CLICK=np.zeros((900,18))
-			# Phase_in_a_shot_NOCLICK=np.zeros((900,18))
-			# Amplitude_in_a_shot_CLICK=np.zeros((900,18))
-			# Amplitude_in_a_shot_NOCLICK=np.zeros((900,18))
 			Phase_in_a_shot_CLICK=np.zeros((numShots,numMeasurementsPerShot))
 			Phase_in_a_shot_NOCLICK=np.zeros((numShots,numMeasurementsPerShot))
 			Amplitude_in_a_shot_CLICK=np.zeros((numShots,numMeasurementsPerShot))
@@ -282,8 +276,8 @@ def fit_to_a_line(x,y):
 	return(popt_func[0],popt_func[1])
 
 #preparing some variables which will be filled with info from all the files
-DigitalChannel1Counter_dir = 0
-averaged_amplitude_in_a_shot_for_dir = 0
+DigitalChannel1Counter_dir = 0 #counts the total number of clicks
+averaged_amplitude_in_a_shot_for_dir = 0 
 averaged_phase_in_a_shot_for_dir = 0
 averaged_phase_in_a_shot_CLICK_for_dir = 0
 averaged_phase_in_a_shot_NOCLICK_for_dir = 0
@@ -292,28 +286,27 @@ square_phase_shift=0
 phase_shiftProbe1_1=0
 phase_shift_CLICKProbe1_File=0
 phase_shift_NOCLICKProbe1_File=0
-
-amplitudeMOT = np.zeros(scansize)
-phaseMOT = np.zeros(scansize)
-amplituderef = np.zeros(scansize)
-phaseref = np.zeros(scansize)
-amplitudeEIT = np.zeros(scansize)
-phaseEIT = np.zeros(scansize)
-phaseAVG = np.zeros(numMeasurementsTotal)
-amplitude_files=np.zeros([100,numMeasurementsProbe1])
 numAtomCycles = 0
 amplitudeAVG=0
 phaseAVG = 0
 phase_in_a_cycle=0
 DigitalData1_cycles=0
 
+amplitudeMOT = np.zeros(scansize)
+phaseMOT = np.zeros(scansize)
+#amplituderef = np.zeros(scansize)
+phaseref = np.zeros(scansize)
+#phaseAVG = np.zeros(numMeasurementsTotal)
+amplitude_files=np.zeros([100,numMeasurementsProbe1])
+
+
 print("Analyzing data in directory: " + dir_main)
 for root, dirs,files in os.walk(dir_main):
 	numFiles=len(files)/2.
-	phase_shift_dir = np.zeros(int(numFiles))
-	phase_shift_CLICK_dir = np.zeros(int(numFiles))
-	phase_shift_NOCLICK_dir = np.zeros(int(numFiles))
-	OD_dir = np.zeros(int(numFiles))
+	phase_shift_dir = np.zeros(int(numFiles)) #this is a nice thing to have because it helps us to monitor the stability of the measurement (sometimes it fails and we can save some data by knowing at which file the MOT died)
+	phase_shift_CLICK_dir = np.zeros(int(numFiles)) #this might not be necessary
+	phase_shift_NOCLICK_dir = np.zeros(int(numFiles)) #this might not be necessary
+	OD_dir = np.zeros(int(numFiles))  
 	i=0
 	for file in files: #just iterate through all the files in the directory
 		if file.endswith('tdms'):
@@ -323,7 +316,7 @@ for root, dirs,files in os.walk(dir_main):
 			ch1_x, amplitude, phase,digital_data, file_info  =  Load_Data(filepath)
 			SegmentsPerFile = file_info.num_segments #get num segments from file info
 			#std_dir_test = np.zeros(SegmentsPerFile)
-			amp_dir_test=np.zeros([SegmentsPerFile,numMeasurementsProbe1])
+			amp_dir_test=np.zeros([SegmentsPerFile,numMeasurementsProbe1]) #contains all the amplitude data after the scans in a file, this is to extract the OD within the atom cycle
 			if ReplaceBool == True:
 				probability = .2/numMeasurementsPerShot
 				digitaldatalength = len(digital_data)
@@ -342,8 +335,8 @@ for root, dirs,files in os.walk(dir_main):
 				stopEIT = 3*scansize+ numMeasurementsTotal*k
 				startPulsingProbe1 = 2*scansize+72+numMeasurementsTotal*k
 				stopPulsingProbe1 = 2*scansize+72+numMeasurementsProbe1+ numMeasurementsTotal*k
-				#phase_slope,phase_offset= fit_to_a_line(ch1_x[startPulsingProbe1:stopPulsingProbe1],phase[startPulsingProbe1:stopPulsingProbe1])
-				amplituderef = amplitude[startref:stopref]
+				phase_slope,phase_offset= fit_to_a_line(ch1_x[startPulsingProbe1:stopPulsingProbe1],phase[startPulsingProbe1:stopPulsingProbe1])
+				#amplituderef = amplitude[startref:stopref]
 				ch1PulsingProbe1_x = ch1_x[startPulsingProbe1:stopPulsingProbe1]
 				amplitudePulsingProbe1 = amplitude[startPulsingProbe1:stopPulsingProbe1]
 				phasePulsingProbe1 = phase[startPulsingProbe1:stopPulsingProbe1]-phase_slope*ch1_x[startPulsingProbe1:stopPulsingProbe1]
@@ -353,26 +346,27 @@ for root, dirs,files in os.walk(dir_main):
 				digitaldatapulsingProbe1 = digital_data[startPulsingProbe1:stopPulsingProbe1]
 				#Feed the data into the Analyze function. 
 				Phase_in_a_shotProbe1, Amplitude_in_a_shotProbe1, Phase_in_a_shot_CLICKProbe1,Phase_in_a_shot_NOCLICKProbe1,DigitalData1_in_a_shotProbe1, phase_shiftProbe1,amplitude_shiftProbe1,phase_shift_CLICKProbe1,amplitude_shift_CLICKProbe1,phase_shift_NOCLICKProbe1,amplitude_shift_NOCLICKProbe1,digitalChannel1CounterProbe1 = Analyze(amplitudePulsingProbe1,phasePulsingProbe1,digitaldatapulsingProbe1, numShots, numMeasurementsProbe1, numMeasurementsPerShot,numsigma)
-				#what do we want to keep track of across all ten files?
+				#what do we want to keep track of across all files?
 				mean_amplitude = np.mean(amplitude[0:700])-zerovalue
 				mean_amplitude2 = np.mean(amplitudePulsingProbe1[300:2000])-zerovalue
 				OD_file += -2*np.log(mean_amplitude2/mean_amplitude)
+				#this is shot information
 				averaged_amplitude_in_a_shot_for_dir += np.mean(Amplitude_in_a_shotProbe1,0)
 				averaged_phase_in_a_shot_for_dir += np.mean(Phase_in_a_shotProbe1,0)
 				averaged_phase_in_a_shot_CLICK_for_dir+=np.mean(Phase_in_a_shot_CLICKProbe1,0)
 				averaged_phase_in_a_shot_NOCLICK_for_dir+=np.mean(Phase_in_a_shot_NOCLICKProbe1,0)
-				DigitalChannel1Counter_dir += digitalChannel1CounterProbe1
+				DigitalChannel1Counter_dir += digitalChannel1CounterProbe1 #counting clicks
 				DigitalData1_cycles+=DigitalData1_in_a_shotProbe1
 				amp_dir_test[k]=amplitudePulsingProbe1
 				numAtomCycles += 1
 
+				#Here we are trying to collect all the XPS statistics using sums to find std and mean
 				phase_shiftProbe1_1+=np.sum(phase_shiftProbe1)/numShots
 				square_phase_shift+=np.sum(phase_shiftProbe1**2)/numShots
 				phase_shiftProbe1_File+=np.mean(phase_shiftProbe1)/SegmentsPerFile
 				phase_shift_CLICKProbe1_File+=np.mean(phase_shift_CLICKProbe1)/SegmentsPerFile #thats the average phase shift in an atom cycle for every atom cycle
 				phase_shift_NOCLICKProbe1_File+=np.mean(phase_shift_NOCLICKProbe1)/SegmentsPerFile
 
-				
 				#now pick a random file to make some plots of so we can sanity check everything. 
 				if file.endswith(fileendstring) and k == 0:
 				#if 1000*np.max(np.mean(phase_shift))>10:
@@ -668,8 +662,8 @@ stringname24 = dir_main+"SPCM.csv"
 stringname25 = dir_main+"Cphase.csv"
 stringname26 = dir_main+"NCphase.csv"
 
-np.savetxt(stringname23,(CvNC_difference),delimiter = ',')
 np.savetxt(stringname22,(averaged_phase_in_a_shot_for_dir_final_zeromean_noslope),delimiter=',')
+np.savetxt(stringname23,(CvNC_difference),delimiter = ',')
 np.savetxt(stringname24,(avg_digital_data),delimiter=',')
 np.savetxt(stringname25,(averaged_phase_in_a_shot_CLICK_for_dir_final_zeromean_noslope),delimiter=',')
 np.savetxt(stringname26,(averaged_phase_in_a_shot_NOCLICK_for_dir_final_zeromean_noslope),delimiter=',')

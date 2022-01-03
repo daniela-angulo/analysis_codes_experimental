@@ -1,0 +1,36 @@
+Description of the analysis code at this stage. 
+
+Tasks: change the way amp_dir_test works to make it more similar to phase_in_a_cycle
+
+We import the libraries
+Define the directory 
+Define the variables. The variable "factor" doesn't do anything right now since we are not including the effect of the crosstalk (I don't think Josiah did either). The variable "BackgroundPhase" is not in use right now either. 
+The "phase_slope" variable is useful to subtract the background phase given by the LO detuning with respect to the RF frequency. We usually find it getting rid of the atoms and fitting the phase to a slope. However, when the atoms are present, the slope changes (even within an atom cycle) so this subtraction doesn't really do the full job. 
+Then we have a section where we define intervals to find the peak XPS in a simple way. We define three points before and after the peak and only one point for the peak. (they need to be equally spaced)
+
+Functions: 
+sixteenBitIntegerTomV: convert the digital info into voltages.
+separate_analog_and_digital: with the new card, the digital data comes inside one of the analog channels and this function separates them.
+Load_Data: the name is selfexplanatory but Kyle can help here because the card has a particular way to save the data. After getting I and Q and the x axis we calculate the amplitude and the phase. And then finally unwrap the phase which takes most of the processing time. return(ch1_x, sixteenBitIntegerTomV(amplitude,file_info.ch0_voltage_range_number), phase,digital_data, file_info)
+
+Analyze: The biggest function of our code. It only takes the information of one atom cycle (amplitude, phase, digitaldata) and reshapes the cycle in an array of shots (shots X measurements per shot). It takes the mean of each of the three points, before and after the peak and then averages those two values to get the background, this is done for each shot. The variable "background_phase" is a vector containing one value correspondent to each shot. 
+Then it takes the digital data and reshapes it into shots X measurements per shot. Sometimes a click takes up several measurement bins e.g a click arriving in measurement 15 is extended through 15,16 and 17 and we wanted to simply get the information of wether there was or not a click so we transform that array to only count the first click. I coded this part but I think there is a mistake because when the click happens on the first bin, then we don't count those because those cases are confused with the ones where there wasn't a click. However, it is unlikely that this happens (click rate is low) because the pulses usually arrive in the middle of the shot and clicks in the first time bin would most probably be dark counts. 
+We can also do Temporal filter which consists on not looking at certain region of the shot to reduce the percentage of background counts with respect to counts coming from the actual signal. 
+We take the digital data array and use the numpy function "any" to evaluate if there was a click in each shot and set those shots to True.  
+Finally, we simply separate the shots that contain clicks from the ones that don't and find the correspondent phase peak values. 
+This function returns complete arrays of phase in a shot and amplitude in a shot (don't see why) and then arrays of phase in a shot for click and no click cases as well as the vectors containing the peak values of these quantities. 
+return(Phase_in_a_shot, Amplitude_in_a_shot, Phase_in_a_shot_CLICK,Phase_in_a_shot_NOCLICK,DigitalData1_in_a_shot, phase_shift,amplitude_shift,phase_shift_CLICK,amplitude_shift_CLICK,phase_shift_NOCLICK,amplitude_shift_NOCLICK, digitalChannel1Counter)
+
+Now the big part of the code, the main loop. Before the main loop there are several variables that are mostly accumulators or just arrays to be filled with the info that's to come. 
+It starts by entering the director and walking it; we create arrays of zeros of size of the number of files (I'm guessing we are gonna get one number per file of these quantities XPS, XPS click and no click and OD) this step seems kind of silly but we use these to monitor the stability of the measurement during a data run. We take data in chunks of 500 or 1000 files and sometimes the MOT dies along the way and then we use this info to see where exactly it died.  
+When we enter a file (a file contains N atom cycles, usually 100), we extract the data using the function Load_Data. 
+ReplaceBool is to create a random set of digital data. 
+The boolean Spectrum is to analyze the scans that happen at the beginning of a cycle. Those variables are accumulating all the info of the amplitude and phase during the scans by averaging the data of file and then adding all the files together. The variable phase_in_a_cycle was created to monitor the linear phase during the atom cycle. 
+Then where the magic happens and we split the data of a file into atom cycles using a for loop. We feed the data of a single atom cycle into the Analyze function.
+We find some OD using the first points of the scan as a reference and then a few points of the amplitude when the signal is being pulsed. 
+
+Nothing to say about the Spectrum part, very straightforward. 
+
+We take the final average phase in a shot to subtract the mean. Then we take the before and after three points to fit them to a line and then subtract the slope and the offset from the final phase in a shot average. And the same is done for the click and no click cases.
+
+The first slope subtraction can be done better. Fitting to all the data of a file instead of a single atom cycle (?)
