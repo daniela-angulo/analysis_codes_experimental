@@ -65,7 +65,7 @@ Spectrum = True
 correction_factor = 6.605 #see evernote from Mar 1, 2021 for calibration
 #numShotsToCorrelate = 50
 numsigma = 1
-delayshift = -1#delay the SPCM's by some # of shots to compensate for a 1us delay with BNCs
+delayshift = 0#delay the SPCM's by some # of shots to compensate for a 1us delay with BNCs
 factor=1 #1.70*.94, this has to be checked every day (don't know)
 zerovalue = 7 #this has to be checked every day (don't know)
 BackgroundPhase=0 #np.genfromtxt('backgroundphaseATOMS20190823.txt', delimiter=',')

@@ -21,7 +21,7 @@ The spectrum feature really slows down the code and we need it. Let's fix it by 
 v6 Let's add the shots from the EIT window. 6000 points or how ever many can complete shots of 36. 
 v7 I added a way to see the XPS over an atom cycle after averaging all the atom cycles. Line 323 saving amplitudes to find the OD during the pulsing time.
 These recent versions have been about analyzing different quantities over an atom cycle. Averaging all the atom cycles first and then breaking it in chunks. See last 20 lines. 
-v9 long shots: same as v9, but for shots that have 36x4 = 108 points. Added Dec 13, 2021 by Kyle.
+v9 long shots: same as v9, but for shots that have 36x4 = 108 points. Added Dec 13, 2021 by Kyle. (updated Jan 10, 2022 to work for 576*2ns shots)
 ----------------------------------------------------------------
 """
 
@@ -51,7 +51,10 @@ mpl.rcParams.update({'font.size': 10, 'font.weight': 'bold','font.family': 'STIX
 # dir_main = 'F:/Data/20210726/XPS_res_OD/10_0p25'
 # dir_main = 'D:/Data/20211028/linear_phase/take2/mp15'
 # dir_main = 'D:/Data/20211129/CvNC_vs_noise/211photons_600mV_rms_noise'
-dir_main = 'D:/Data/20211216/20211216/CvNC_signal_resonance0_jitter_on/take_0'
+# dir_main = 'D:/Data/20220329/OD_tests/OD_test_18kHz_1'
+# dir_main = 'D:/Data/20220406/CvNC_bypassing_atoms_long_shots/40ns_1400'
+dir_main = 'D:/Data/20220411/CvNC_bypassing_atoms/CvNC_40ns_comp_coils_off_B1p8_1244'
+#dir_main = 'D:/Data/20220405/CvNC_bypassing_atoms/18kHz_CvNC_40ns_1600'
 # dir_main = 'D:/Data/20211129/phi_0_633'
 # dir_main = 'D:/Data/20211104/XPS_vs_probe_power/test'
 #dir_main = 'sample_data_clicks'
@@ -59,7 +62,7 @@ dir_main = 'D:/Data/20211216/20211216/CvNC_signal_resonance0_jitter_on/take_0'
 #dir_main = 'XPS_vs_probe_detuning_30ns_pulses_signal_m0p06V/0p01V'
 
 fileendstring = '_0.tdms'
-AnalyzeDigitalDataBool = True
+AnalyzeDigitalDataBool = True 	#false for not taking digital data
 TemporalFilteringBool = False
 ReplaceBool = False
 Spectrum = True
@@ -70,11 +73,11 @@ delayshift = 0#delay the SPCM's by some # of shots to compensate for a 1us delay
 factor=1 #1.70*.94, this has to be checked every day (don't know)
 zerovalue = 7 #this has to be checked every day (don't know)
 BackgroundPhase=0 #np.genfromtxt('backgroundphaseATOMS20190823.txt', delimiter=',')
-numShots = 412#1648/4
+numShots = 412 #1648/4 (do 1648/2 for 2 shots)
 offsetOD = 0 #(don't know)
 numMeasurementsProbe1 = int(59328)
 numMeasurementsTotal =  int(72000)
-numMeasurementsPerShot = int(144) #2.304us
+numMeasurementsPerShot = int(144) #72 for 2 shots
 scansize = int(6300)
 phase_slope=-0.000321146 #found in calibration for 10KHz LO detuning
 #phase_slope=-0.0294728 #found in calibration for 300KHz LO detuning
@@ -97,14 +100,23 @@ phase_slope=-0.000321146 #found in calibration for 10KHz LO detuning
 # start3 = 17+shift #17
 # stop3 = 21+shift #21
 
-# for 50ns Gaussian pulses
-shift = 13 #2
-start1 = 4+shift
-stop1 = 8+shift
-start2 = 17+shift #9
-stop2 = 18+shift #10
-start3 = 27+shift #17
-stop3 = 31+shift #21
+# # for 50ns Gaussian pulses
+# shift = 21 #2
+# start1 = 0+shift
+# stop1 = 10+shift
+# start2 = 20+shift #9
+# stop2 = 21+shift #10
+# start3 = 31+shift #17
+# stop3 = 41+shift #21
+
+# for 4x10ns Gaussian pulses and 4 shots
+shift = 0 #2
+start1 = 20+shift
+stop1 = 40+shift
+start2 = 60+shift #9
+stop2 = 61+shift #10
+start3 = 81+shift #17
+stop3 = 101+shift #21
 
 # # for 10ns Gaussian pulses
 # shift = -4 #2
@@ -178,8 +190,8 @@ def Analyze(amplitude, phase, digitaldata1, numShots, numMeasurements, numMeasur
 	#take 27000 long array and make it into 375, 72 long arrays
 	if len(amplitude) != numMeasurements:
 		print('Warning, array is the wrong length')
-	Phase_in_a_shot = phase.reshape(numShots,numMeasurementsPerShot)
-	Amplitude_in_a_shot = amplitude.reshape(numShots,numMeasurementsPerShot)
+	Phase_in_a_shot = phase.reshape(numShots,numMeasurementsPerShot)[:206,]
+	Amplitude_in_a_shot = amplitude.reshape(numShots,numMeasurementsPerShot)[:206,]
 	
 	#subtract off linear background
 	background_i_phase = np.mean(Phase_in_a_shot[:,start1:stop1],1)
@@ -195,7 +207,7 @@ def Analyze(amplitude, phase, digitaldata1, numShots, numMeasurements, numMeasur
 	amplitude_shift = signal_amp - background_amp
 
 	if AnalyzeDigitalDataBool == True:
-		DigitalData_in_a_shot = digitaldata1.reshape(numShots,numMeasurementsPerShot)
+		DigitalData_in_a_shot = digitaldata1.reshape(numShots,numMeasurementsPerShot)[:206,]
 		#This is done to only count the arrival time bin of a click 
 		b=np.zeros_like(DigitalData_in_a_shot)
 		b[np.arange(len(DigitalData_in_a_shot)), DigitalData_in_a_shot.argmax(1)] = 1 #python doesn't know what to do when all the elements are equal and returns the first index
@@ -341,7 +353,7 @@ for root, dirs,files in os.walk(dir_main):
 				stopEIT = 3*scansize+ numMeasurementsTotal*k
 				startPulsingProbe1 = 2*scansize+72+numMeasurementsTotal*k
 				stopPulsingProbe1 = 2*scansize+72+numMeasurementsProbe1+ numMeasurementsTotal*k
-				#phase_slope,phase_offset= fit_to_a_line(ch1_x[startPulsingProbe1:stopPulsingProbe1],phase[startPulsingProbe1:stopPulsingProbe1])
+				phase_slope,phase_offset= fit_to_a_line(ch1_x[startPulsingProbe1:stopPulsingProbe1],phase[startPulsingProbe1:stopPulsingProbe1])
 				amplituderef = amplitude[startref:stopref]
 				ch1PulsingProbe1_x = ch1_x[startPulsingProbe1:stopPulsingProbe1]
 				amplitudePulsingProbe1 = amplitude[startPulsingProbe1:stopPulsingProbe1]
@@ -451,9 +463,9 @@ for root, dirs,files in os.walk(dir_main):
 					axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[0,:]+.1,'-',color='navy',label="shot 1",linewidth=3.0)
 					axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[75,:]+.2,'-',color='green',label="shot 76",linewidth=3.0)
 					axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[150,:]+.3,'-',color='orange',label="shot 151",linewidth=3.0)
-					axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[225,:]+.4,'-',color='k',label="shot 226",linewidth=3.0)
-					axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[235,:]+.5,'-',color='red',label="shot 301",linewidth=3.0)
-					axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[245,:]+.6,'-',color='blue',label="shot 375",linewidth=3.0)
+					# axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[225,:]+.4,'-',color='k',label="shot 226",linewidth=3.0)
+					# axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[235,:]+.5,'-',color='red',label="shot 301",linewidth=3.0)
+					# axes1[2,2].plot(x1,DigitalData1_in_a_shotProbe1[245,:]+.6,'-',color='blue',label="shot 375",linewidth=3.0)
 					axes1[2,2].plot(x1,10*avg_digital_data+2,'s-',color='orange',label="averaged shot",linewidth=3.0)
 					axes1[2,2].text(0,3,"Count1 is %i"%(digitalChannel1CounterProbe1),fontsize=10, fontweight = 'bold')
 					axes1[2,2].set_title("Digital Data (1) in a shot for file 2", fontsize=10, fontweight='bold')
@@ -562,7 +574,7 @@ averaged_phase_in_a_shot_CLICK_for_dir_final_zeromean_noslope = averaged_phase_i
 
 averaged_phase_in_a_shot_NOCLICK_for_dir_final_zeromean=averaged_phase_in_a_shot_NOCLICK_for_dir_final-np.mean(averaged_phase_in_a_shot_NOCLICK_for_dir_final)
 yPhaseDataNOClick = np.append(averaged_phase_in_a_shot_NOCLICK_for_dir_final_zeromean[start1:stop1],averaged_phase_in_a_shot_NOCLICK_for_dir_final_zeromean[start3:stop3])
-mNOClick,bNOClick = fit_to_a_line(xdata,yPhaseDataNOClick)
+mNOClick,bNOClick = fit_to_a_line(xdata,yPhaseDataNOClick) #Doesn't like high click rates (2022/03/30)
 averaged_phase_in_a_shot_NOCLICK_for_dir_final_zeromean_noslope = averaged_phase_in_a_shot_NOCLICK_for_dir_final_zeromean-x3*mNOClick-bNOClick-BackgroundPhase
 
 average_amplitude = np.mean(averaged_amplitude_in_a_shot_for_dir_final)
