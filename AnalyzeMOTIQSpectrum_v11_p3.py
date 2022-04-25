@@ -23,7 +23,7 @@ v7 I added a way to see the XPS over an atom cycle after averaging all the atom 
 These recent versions have been about analyzing different quantities over an atom cycle. Averaging all the atom cycles first and then breaking it in chunks. See last 20 lines. 
 v10 to only look at the second half of the cycle or just divide it into two 
 v10p1 long shots:  added capability to run program while simultaneously saving data from the VI (Vida)
-v11 sorry about everything I'm gonna get rid of here but this code is so long and so hard to look at that it needs to be shrunk 
+v11 sorry about everything I'm gonna get rid of here but this code is so long and so hard to look at that it needs to be shrunk. I took away a bunch of plots that were very useless and now I'm gonna modify the first one so it shows the average and not the amplitude of a single file
 ----------------------------------------------------------------
 """
 
@@ -277,7 +277,7 @@ if analyze_while_taking_data == True:
 			digitaldatalength = len(digital_data)
 			digital_data = np.random.binomial(1,probability,len(digital_data))#use this if you want a random set of digital data
 		if Spectrum == True:
-			amplitudeAVG += np.mean(amplitude.reshape(SegmentsPerFile,numMeasurementsTotal),0)[0:scansize*2]
+			amplitudeAVG += np.mean(amplitude.reshape(SegmentsPerFile,numMeasurementsTotal),0)
 			phaseAVG += np.mean(phase.reshape(SegmentsPerFile,numMeasurementsTotal),0)[0:scansize*2] 
 			phase_in_a_cycle+=np.mean(phase.reshape(SegmentsPerFile,numMeasurementsTotal),0)[(2*scansize+72):numMeasurementsTotal]
 		OD_file=0
@@ -355,20 +355,20 @@ if analyze_while_taking_data == True:
 				amp_mean = np.mean(amplitude[12000:15000])
 				amp_std = np.std(amplitude[12000:15000])
 				####################################PLOT OF AMPLITUDE FROM RANDOM ATOM CYCLE###############
-				axes1[0,0].plot(ch1_x[0:numMeasurementsTotal],amplitude[0:numMeasurementsTotal],'-',color='navy',label="Beatnote amplitude",linewidth=3.0)
-				axes1[0,0].axvline(x=startref,color='orange',linewidth=2.0)
-				axes1[0,0].axvline(x=stopref,color='orange',linewidth=2.0)
-				axes1[0,0].axvline(x=startMOT,color='orange',linewidth=2.0)
-				axes1[0,0].axvline(x=stopMOT,color='orange',linewidth=2.0)				
-				axes1[0,0].axvline(x=startPulsingProbe1,color='orange',linewidth=2.0)
-				axes1[0,0].axvline(x=stopPulsingProbe1,color='orange',linewidth=2.0)
-				axes1[0,0].set_title("Amplitude for file 0", fontsize=10, fontweight='bold')
-				axes1[0,0].set_xlabel('Index', fontsize=10, fontweight = 'bold')
-				axes1[0,0].set_ylabel('Amplitude (mV)', fontsize=10, fontweight = 'bold')
-				axes1[0,0].text(0,1.7*amp_mean,"amplitude mean is %1.1f +/- %1.1fmV" %(np.mean(amplitude[startMOT:stopMOT]), np.std(amplitude[startMOT:stopMOT])), fontsize=10, fontweight = 'bold')
-				axes1[0,0].text(0,1.9*amp_mean,"OD is %1.2f" %(OD_file), fontsize=10, fontweight = 'bold')
-				axes1[0,0].grid()
-				axes1[0,0].set_ylim(-1,1.1*np.max(amplitude))
+				# axes1[0,0].plot(ch1_x[0:numMeasurementsTotal],amplitude[0:numMeasurementsTotal],'-',color='navy',label="Beatnote amplitude",linewidth=3.0)
+				# axes1[0,0].axvline(x=startref,color='orange',linewidth=2.0)
+				# axes1[0,0].axvline(x=stopref,color='orange',linewidth=2.0)
+				# axes1[0,0].axvline(x=startMOT,color='orange',linewidth=2.0)
+				# axes1[0,0].axvline(x=stopMOT,color='orange',linewidth=2.0)				
+				# axes1[0,0].axvline(x=startPulsingProbe1,color='orange',linewidth=2.0)
+				# axes1[0,0].axvline(x=stopPulsingProbe1,color='orange',linewidth=2.0)
+				# axes1[0,0].set_title("Amplitude for file 0", fontsize=10, fontweight='bold')
+				# axes1[0,0].set_xlabel('Index', fontsize=10, fontweight = 'bold')
+				# axes1[0,0].set_ylabel('Amplitude (mV)', fontsize=10, fontweight = 'bold')
+				# axes1[0,0].text(0,1.7*amp_mean,"amplitude mean is %1.1f +/- %1.1fmV" %(np.mean(amplitude[startMOT:stopMOT]), np.std(amplitude[startMOT:stopMOT])), fontsize=10, fontweight = 'bold')
+				# axes1[0,0].text(0,1.9*amp_mean,"OD is %1.2f" %(OD_file), fontsize=10, fontweight = 'bold')
+				# axes1[0,0].grid()
+				# axes1[0,0].set_ylim(-1,1.1*np.max(amplitude))
 
 				avg_digital_data = np.mean(DigitalData1_in_a_shotProbe1,0)
 				####################################PLOT OF DIGITAL DATA IN SHOT FROM RANDOM ATOM CYCLE###############
@@ -408,6 +408,29 @@ if analyze_while_taking_data == True:
 # # probePulsing_OD=-2*np.log(final_amp/mean_amplitude)
 # # np.savetxt(dir_main+"ODpulsing.csv",probePulsing_OD,delimiter = ',')
 # np.savetxt(dir_main+"amp_pulsing.csv",final_amp,delimiter = ',')
+startref = 0 
+stopref = scansize
+startMOT = scansize
+stopMOT = 2*scansize
+startPulsingProbe1 = 2*scansize+72
+stopPulsingProbe1 = 2*scansize+72+numMeasurementsProbe1
+amplitudeAVG = SegmentsPerFile*amplitudeAVG/numAtomCycles
+
+axes1[0,0].plot(ch1_x[0:numMeasurementsTotal],amplitudeAVG,'-',color='navy',label="Beatnote amplitude",linewidth=3.0)
+axes1[0,0].axvline(x=startref,color='orange',linewidth=2.0)
+axes1[0,0].axvline(x=stopref,color='orange',linewidth=2.0)
+axes1[0,0].axvline(x=startMOT,color='orange',linewidth=2.0)
+axes1[0,0].axvline(x=stopMOT,color='orange',linewidth=2.0)				
+axes1[0,0].axvline(x=startPulsingProbe1,color='orange',linewidth=2.0)
+axes1[0,0].axvline(x=stopPulsingProbe1,color='orange',linewidth=2.0)
+axes1[0,0].set_title("Amplitude for file 0", fontsize=10, fontweight='bold')
+axes1[0,0].set_xlabel('Index', fontsize=10, fontweight = 'bold')
+axes1[0,0].set_ylabel('Amplitude (mV)', fontsize=10, fontweight = 'bold')
+axes1[0,0].set_ylim(-1,1.2*np.max(amplitudeAVG))
+axes1[0,0].text(0,1.1*amp_mean,"amplitude mean is %1.1f +/- %1.1fmV" %(np.mean(amplitudeAVG[startPulsingProbe1:stopPulsingProbe1]), np.std(amplitudeAVG[startPulsingProbe1:stopPulsingProbe1])), fontsize=10, fontweight = 'bold')
+# axes1[0,0].text(0,1.15*amp_mean,"OD is %1.2f" %(OD_file), fontsize=10, fontweight = 'bold')
+axes1[0,0].grid()
+
 
 print("%i atom cycles analyzed" %numAtomCycles)
 #print("%i phase noise" %np.mean(std_dir_test))
@@ -416,7 +439,6 @@ if Spectrum == True:
 	stopspectrum = 4500
 	offset_spectrum = -150+25
 	phaseAVG = SegmentsPerFile*(phaseAVG)/numAtomCycles
-	amplitudeAVG = SegmentsPerFile*amplitudeAVG/numAtomCycles
 	amplitude_nomot = amplitudeAVG[startspectrum:stopspectrum]-zerovalue
 	amplitude_mot = (amplitudeAVG[scansize+startspectrum-offset_spectrum:scansize+stopspectrum-offset_spectrum])-zerovalue
 	phase_nomot = phaseAVG[startspectrum:stopspectrum] - np.mean(phaseAVG[startspectrum:stopspectrum])
